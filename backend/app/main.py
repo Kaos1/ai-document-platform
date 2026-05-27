@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from app.database import Base, engine
+from app import models
 from app.routes import documents
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AI Document Management Platform")
 
