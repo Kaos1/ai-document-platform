@@ -11,6 +11,8 @@ from app.database import get_db
 from app.models import Document
 from app.schemas import DocumentResponse
 
+from app.services.text_extraction import extract_text
+
 router = APIRouter()
 
 UPLOAD_DIR = "app/uploads"
@@ -40,12 +42,14 @@ def upload_document(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    extracted_text = extract_text(file_path, file.content_type)
+
     document = Document(
         filename=unique_filename,
         original_filename=file.filename,
         content_type=file.content_type,
         file_path=file_path,
-        extracted_text=None
+        extracted_text=extracted_text
     )
 
     db.add(document)
@@ -59,6 +63,14 @@ def upload_document(
 def get_documents(db: Session = Depends(get_db)):
     return db.query(Document).order_by(Document.created_at.desc()).all()
 
+@router.get("/search/", response_model=List[DocumentResponse])
+def search_documents(query: str, db: Session = Depends(get_db)):
+    return (
+        db.query(Document)
+        .filter(Document.extracted_text.ilike(f"%{query}%"))
+        .order_by(Document.created_at.desc())
+        .all()
+    )
 
 @router.get("/{document_id}/download")
 def download_document(document_id: int, db: Session = Depends(get_db)):
