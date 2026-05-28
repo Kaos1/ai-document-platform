@@ -8,6 +8,8 @@ class DocumentResponse(BaseModel):
     original_filename: str
     content_type: str
     extracted_text: Optional[str]
+    summary: Optional[str]
+    tags: Optional[str]
     created_at: datetime
 
     class Config:

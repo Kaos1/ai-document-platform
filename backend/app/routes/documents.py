@@ -13,6 +13,8 @@ from app.schemas import DocumentResponse
 
 from app.services.text_extraction import extract_text
 
+from app.services.ai_processing import generate_summary, generate_tags, generate_embedding, rank_documents_by_similarity
+
 router = APIRouter()
 
 UPLOAD_DIR = "app/uploads"
@@ -43,13 +45,19 @@ def upload_document(
         shutil.copyfileobj(file.file, buffer)
 
     extracted_text = extract_text(file_path, file.content_type)
+    summary = generate_summary(extracted_text)
+    tags = generate_tags(extracted_text)
+    embedding = generate_embedding(extracted_text)
 
     document = Document(
         filename=unique_filename,
         original_filename=file.filename,
         content_type=file.content_type,
         file_path=file_path,
-        extracted_text=extracted_text
+        extracted_text=extracted_text,
+        summary=summary,
+        tags=tags,
+        embedding=embedding
     )
 
     db.add(document)
@@ -71,6 +79,14 @@ def search_documents(query: str, db: Session = Depends(get_db)):
         .order_by(Document.created_at.desc())
         .all()
     )
+
+@router.get("/semantic-search/", response_model=List[DocumentResponse])
+def semantic_search_documents(query: str, db: Session = Depends(get_db)):
+    documents = db.query(Document).all()
+    ranked_documents = rank_documents_by_similarity(query, documents)
+
+    # Return top 5 most relevant documents
+    return [document for document, score in ranked_documents[:5]]
 
 @router.get("/{document_id}/download")
 def download_document(document_id: int, db: Session = Depends(get_db)):

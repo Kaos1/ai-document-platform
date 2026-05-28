@@ -11,4 +11,7 @@ class Document(Base):
     content_type = Column(String, nullable=False)
     file_path = Column(String, nullable=False)
     extracted_text = Column(Text, nullable=True)
+    summary = Column(Text, nullable=True)
+    tags = Column(Text, nullable=True)
+    embedding = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
