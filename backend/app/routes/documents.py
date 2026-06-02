@@ -15,6 +15,9 @@ from app.services.text_extraction import extract_text
 
 from app.services.ai_processing import generate_summary, generate_tags, generate_embedding, rank_documents_by_similarity
 
+from app.auth import get_current_user
+from app.models import Document, User
+
 router = APIRouter()
 
 UPLOAD_DIR = "app/uploads"
@@ -29,7 +32,8 @@ ALLOWED_CONTENT_TYPES = {
 @router.post("/upload", response_model=DocumentResponse)
 def upload_document(
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     if file.content_type not in ALLOWED_CONTENT_TYPES:
         raise HTTPException(
@@ -57,7 +61,8 @@ def upload_document(
         extracted_text=extracted_text,
         summary=summary,
         tags=tags,
-        embedding=embedding
+        embedding=embedding,
+        user_id=current_user.id
     )
 
     db.add(document)
@@ -68,29 +73,50 @@ def upload_document(
 
 
 @router.get("/", response_model=List[DocumentResponse])
-def get_documents(db: Session = Depends(get_db)):
-    return db.query(Document).order_by(Document.created_at.desc()).all()
-
-@router.get("/search/", response_model=List[DocumentResponse])
-def search_documents(query: str, db: Session = Depends(get_db)):
+def get_documents(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     return (
         db.query(Document)
+        .filter(Document.user_id == current_user.id)
+        .order_by(Document.created_at.desc())
+        .all()
+    )
+
+@router.get("/search/", response_model=List[DocumentResponse])
+def search_documents(
+    query: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return (
+        db.query(Document)
+        .filter(Document.user_id == current_user.id)
         .filter(Document.extracted_text.ilike(f"%{query}%"))
         .order_by(Document.created_at.desc())
         .all()
     )
 
 @router.get("/semantic-search/", response_model=List[DocumentResponse])
-def semantic_search_documents(query: str, db: Session = Depends(get_db)):
-    documents = db.query(Document).all()
+def semantic_search_documents(
+    query: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    documents = (
+        db.query(Document)
+        .filter(Document.user_id == current_user.id)
+        .all()
+    )
+
     ranked_documents = rank_documents_by_similarity(query, documents)
 
-    # Return top 5 most relevant documents
     return [document for document, score in ranked_documents[:5]]
 
 @router.get("/{document_id}/download")
-def download_document(document_id: int, db: Session = Depends(get_db)):
-    document = db.query(Document).filter(Document.id == document_id).first()
+def download_document(document_id: int,db: Session = Depends(get_db),current_user: User = Depends(get_current_user)):
+    document = (db.query(Document).filter(Document.id == document_id).filter(Document.user_id == current_user.id).first())
 
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
@@ -106,8 +132,8 @@ def download_document(document_id: int, db: Session = Depends(get_db)):
 
 
 @router.delete("/{document_id}")
-def delete_document(document_id: int, db: Session = Depends(get_db)):
-    document = db.query(Document).filter(Document.id == document_id).first()
+def delete_document(document_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    document = (db.query(Document).filter(Document.id == document_id).filter(Document.user_id == current_user.id).first())
 
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
