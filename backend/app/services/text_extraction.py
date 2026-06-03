@@ -3,8 +3,10 @@ from pypdf import PdfReader
 from PIL import Image
 import pytesseract
 
-# Windows Tesseract path
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+tesseract_path = os.getenv("TESSERACT_CMD")
+
+if tesseract_path:
+    pytesseract.pytesseract.tesseract_cmd = tesseract_path
 
 
 def extract_text_from_pdf(file_path: str) -> str:

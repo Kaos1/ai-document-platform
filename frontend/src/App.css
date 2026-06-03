@@ -21,6 +21,10 @@ body {
   border-radius: 16px;
   margin-bottom: 24px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
 }
 
 .hero h1 {
@@ -34,6 +38,14 @@ body {
   font-size: 17px;
 }
 
+.user-box {
+  text-align: right;
+}
+
+.user-box p {
+  margin-bottom: 12px;
+}
+
 .card {
   background: white;
   padding: 24px;
@@ -42,6 +54,23 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
+.auth-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.auth-tabs button {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.auth-tabs button.active-tab {
+  background: #2563eb;
+  color: white;
+}
+
+.auth-form,
 .upload-form,
 .search-row {
   display: flex;
@@ -50,7 +79,9 @@ body {
   align-items: center;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+input[type="password"] {
   min-width: 280px;
   flex: 1;
   padding: 11px 12px;
@@ -88,6 +119,13 @@ button:disabled {
   margin-top: 14px;
   color: #2563eb;
   font-weight: 600;
+}
+
+.floating-message {
+  background: white;
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .documents h2 {
@@ -134,4 +172,15 @@ button:disabled {
 
 .actions button:hover {
   background: #b91c1c;
+}
+
+@media (max-width: 760px) {
+  .hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-box {
+    text-align: left;
+  }
 }

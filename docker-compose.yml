@@ -1,0 +1,41 @@
+services:
+  database:
+    image: postgres:16
+    container_name: document_platform_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: document_platform
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: document_platform_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@database:5432/document_platform
+      SECRET_KEY: super-secret-dev-key-change-later
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 60
+      TESSERACT_CMD: /usr/bin/tesseract
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+    volumes:
+      - ./backend/app/uploads:/app/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: document_platform_frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
